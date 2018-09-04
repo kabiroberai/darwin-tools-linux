@@ -1,0 +1,51 @@
+#!/bin/bash
+
+set -e
+
+info() { echo "[info] $1"; }
+
+info "Creating prefix dir"
+rm -rf staging
+mkdir -p staging/linux/iphone
+cd staging
+
+info "Building libtapi"
+git clone https://github.com/tpoechtrager/apple-libtapi.git
+cd apple-libtapi
+mkdir output
+export INSTALLPREFIX="${PWD}/../linux/iphone"
+./build.sh
+./install.sh
+cd ..
+
+info "Building cctools"
+git clone https://github.com/tpoechtrager/cctools-port.git
+cd cctools-port/cctools
+mkdir output
+./configure \
+	--prefix "${INSTALLPREFIX}" \
+	--with-libtapi="${INSTALLPREFIX}" \
+	--target="aarch64-apple-darwin14"
+make
+make install
+cd ../..
+
+info "Building ldid"
+git clone https://github.com/xerub/ldid.git
+cd ldid
+./make.sh
+cp ldid "${INSTALLPREFIX}/bin/"
+
+info "Modifying toolchain"
+cd "${INSTALLPREFIX}/bin"
+rename 's/aarch/arm/g' *
+chrpath -r "\$ORIGIN/../lib" arm64-apple-darwin14-ld
+cp ../../../../tramp.sh .
+ln -s tramp.sh arm64-apple-darwin14-clang
+ln -s tramp.sh arm64-apple-darwin14-clang++
+
+cd ../../../..
+mkdir -p packages
+tar -czf packages/linux-cctools.tar.gz staging/linux
+
+info "Done!"
