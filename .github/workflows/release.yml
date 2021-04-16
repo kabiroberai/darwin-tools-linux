@@ -32,6 +32,7 @@ jobs:
         path: upload_url.txt
 
   build:
+    needs: create_release
     strategy:
       matrix:
         os:
