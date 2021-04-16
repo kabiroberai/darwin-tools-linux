@@ -11,7 +11,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
       with:
-        recursive: true
+        submodules: true
     - name: Build Release
       id: build_release
       run: |
