@@ -3,6 +3,10 @@
 set -e
 shopt -s extglob
 
+LIBTAPI_VER=(-b 1100.0.11)
+CCTOOLS_VER=(-b 973.0.1-ld64-609)
+LDID_VER=v2.1.4
+
 info() { echo "[info] $1"; }
 
 ROOT="${PWD}"
@@ -17,6 +21,7 @@ mkdir -p "${INSTALLPREFIX}"
 info "Building libtapi"
 cd "${STAGING}"
 git clone https://github.com/tpoechtrager/apple-libtapi.git
+git checkout "${LIBTAPI_VER[@]}"
 cd apple-libtapi
 mkdir output
 ./build.sh
@@ -25,33 +30,30 @@ mkdir output
 info "Building cctools"
 cd "${STAGING}"
 git clone https://github.com/tpoechtrager/cctools-port.git
+git checkout "${CCTOOLS_VER[@]}"
 cd cctools-port/cctools
 mkdir output
 ./configure \
 	--prefix "${INSTALLPREFIX}" \
 	--with-libtapi="${INSTALLPREFIX}" \
-	--target="aarch64-apple-darwin14"
+	--target="aarch64-apple-darwin14" \
+	LDFLAGS="-Wl,-rpath,'\$\$ORIGIN/../lib' -Wl,-z,origin"
 make
 make install
 
-info "Building ldid"
-cd "${STAGING}"
-git clone https://github.com/xerub/ldid.git
-cd ldid
-./make.sh
-cp ldid "${INSTALLPREFIX}/bin/"
-
 info "Modifying toolchain"
 cd "${INSTALLPREFIX}/bin"
-rename 's/aarch/arm/g' *
-chrpath -r '$ORIGIN/../lib' !(ldid)
-cp "${ROOT}/tramp.sh" .
-ln -s tramp.sh arm64-apple-darwin14-clang
-ln -s tramp.sh arm64-apple-darwin14-clang++
+for file in *; do
+	mv "${file}" "${file#aarch64-apple-darwin14-}"
+done
+
+info "Installing ldid"
+# TODO: Maybe build ldid ourselves?
+curl -#L "https://github.com/sbingner/ldid/releases/download/${LDID_TAG}/linux-ldid.tgz" | tar -xzf - -C "${INSTALLPREFIX}/bin"
 
 info "Packaging toolchain"
 mkdir -p "${PACKAGES}"
 cd "${STAGING}"
-tar -czf "${PACKAGES}/linux-cctools.tar.gz" linux
+tar -czf "${PACKAGES}/darwin-tools.tar.gz" linux
 
 info "Done!"
