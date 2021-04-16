@@ -6,7 +6,7 @@ This toolchain is relatively minimal; it does not include clang/swiftc.
 
 ## Usage
 
-In order to prepare this toolchain yourself, run the following command after cloning this repo
+In order to prepare this toolchain yourself, run the following command after (recursively) cloning this repo
 
     ./prepare-toolchain
 

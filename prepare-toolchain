@@ -3,10 +3,6 @@
 set -e
 shopt -s extglob
 
-LIBTAPI_VER=(-b 1100.0.11)
-CCTOOLS_VER=(-b 973.0.1-ld64-609)
-LDID_VER=v2.1.4
-
 info() { echo "[info] $1"; }
 
 ROOT="${PWD}"
@@ -19,20 +15,12 @@ rm -rf "${STAGING}"
 mkdir -p "${INSTALLPREFIX}"
 
 info "Building libtapi"
-cd "${STAGING}"
-git clone https://github.com/tpoechtrager/apple-libtapi.git
-git checkout "${LIBTAPI_VER[@]}"
-cd apple-libtapi
-mkdir output
+cd "${ROOT}/apple-libtapi"
 ./build.sh
 ./install.sh
 
 info "Building cctools"
-cd "${STAGING}"
-git clone https://github.com/tpoechtrager/cctools-port.git
-git checkout "${CCTOOLS_VER[@]}"
-cd cctools-port/cctools
-mkdir output
+cd "${ROOT}/cctools-port/cctools"
 ./configure \
 	--prefix "${INSTALLPREFIX}" \
 	--with-libtapi="${INSTALLPREFIX}" \
@@ -49,7 +37,7 @@ done
 
 info "Installing ldid"
 # TODO: Maybe build ldid ourselves?
-curl -#L "https://github.com/sbingner/ldid/releases/download/${LDID_TAG}/linux-ldid.tgz" | tar -xzf - -C "${INSTALLPREFIX}/bin"
+curl -#L "https://github.com/sbingner/ldid/releases/download/v2.1.4/linux-ldid.tgz" | tar -xzf - -C "${INSTALLPREFIX}/bin"
 
 info "Packaging toolchain"
 mkdir -p "${PACKAGES}"
