@@ -10,8 +10,8 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v2
+    - name: Build Release
       id: build_release
-      name: Build Release
       run: |
         echo "::set-output name=tag::${GITHUB_REF#refs/tags/}"
         ./prepare-toolchain
