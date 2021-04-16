@@ -1,23 +1,13 @@
-# ios-toolchain-linux
+# darwin-tools-linux
 
-A modern iOS toolchain for Linux
+Theos-compatible Darwin tools for Linux (cctools + ld + ldid).
 
-## Prerequisites
-
-    sudo apt-get install rename chrpath
+This toolchain is relatively minimal; it does not include clang/swiftc.
 
 ## Usage
 
-In order to prepare a toolchain yourself, run the following command after cloning this repo
+In order to prepare this toolchain yourself, run the following command after (recursively) cloning this repo
 
     ./prepare-toolchain
 
-## Installation
-
-    tar xzf </path/to/toolchain.tar.gz> -C "$THEOS/toolchain"
-
-You can obtain a pre-prepared toolchain from the releases section of this repository.
-
-## Dependencies
-
-To use this toolchain, you must have either clang-6.0, clang-7, or clang-8 installed. For instructions on how to install these, see <http://apt.llvm.org>.
+You can obtain a pre-prepared copy from the releases section of this repository.

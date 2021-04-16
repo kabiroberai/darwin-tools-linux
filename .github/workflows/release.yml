@@ -1,0 +1,38 @@
+name: Create Release
+
+on:
+  push:
+    tags:
+    - '*'
+
+jobs:
+  release:
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Build Release
+      id: build_release
+      run: |
+        echo "::set-output name=tag::${GITHUB_REF#refs/tags/}"
+        ./prepare-toolchain
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: ${{ steps.build_release.outputs.tag }}
+        body: ''
+        draft: true
+    - name: Upload Release
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: packages/darwin-tools.tar.gz
+        asset_name: darwin-tools.tar.gz
+        asset_content_type: application/gzip
