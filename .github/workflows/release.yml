@@ -7,7 +7,16 @@ on:
 
 jobs:
   release:
-    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        os:
+          - runner: ubuntu-20.04
+            name: ubuntu20.04
+          - runner: ubuntu-18.04
+            name: ubuntu18.04
+          - runner: ubuntu-16.04
+            name: ubuntu16.04
+    runs-on: ${{ matrix.os.runner }}
     steps:
     - uses: actions/checkout@v2
       with:
@@ -34,5 +43,5 @@ jobs:
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
         asset_path: packages/darwin-tools.tar.gz
-        asset_name: darwin-tools.tar.gz
+        asset_name: darwin-tools-${{ matrix.os.name }}.tar.gz
         asset_content_type: application/gzip
