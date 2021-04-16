@@ -13,7 +13,7 @@ jobs:
       id: build_release
       name: Build Release
       run: |
-        echo "::set-output name=version::${GITHUB_REF#refs/tags/}"
+        echo "::set-output name=tag::${GITHUB_REF#refs/tags/}"
         ./prepare-toolchain
     - name: Create Release
       id: create_release
@@ -22,7 +22,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         tag_name: ${{ github.ref }}
-        release_name: v${{ steps.build_release.outputs.version }}
+        release_name: ${{ steps.build_release.outputs.tag }}
         body: ''
         draft: true
     - name: Upload Release
