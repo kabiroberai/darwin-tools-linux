@@ -18,11 +18,12 @@ info "Building libtapi"
 cd "${ROOT}/apple-libtapi"
 ./build.sh
 ./install.sh
+make -C "${ROOT}/apple-libtapi/build" install-tapi
 
 info "Building cctools"
 cd "${ROOT}/cctools-port/cctools"
 ./configure \
-	--prefix "${INSTALLPREFIX}" \
+	--prefix="${INSTALLPREFIX}" \
 	--with-libtapi="${INSTALLPREFIX}" \
 	--target="aarch64-apple-darwin14" \
 	LDFLAGS="-Wl,-rpath,'\$\$ORIGIN/../lib' -Wl,-z,origin"
@@ -37,7 +38,7 @@ done
 
 info "Installing ldid"
 # TODO: Maybe build ldid ourselves?
-curl -#L "https://github.com/sbingner/ldid/releases/download/v2.1.4/linux-ldid.tgz" | tar -xzf - -C "${INSTALLPREFIX}/bin"
+curl -#L "https://github.com/sbingner/ldid/releases/download/v2.1.4%2B16.g5b8581c/ldid-linux.gz" | tar -xzf - -C "${INSTALLPREFIX}/bin"
 
 info "Packaging toolchain"
 mkdir -p "${PACKAGES}"
