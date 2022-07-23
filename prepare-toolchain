@@ -38,7 +38,7 @@ done
 
 info "Installing ldid"
 # TODO: Maybe build ldid ourselves?
-curl -#L "https://github.com/sbingner/ldid/releases/download/v2.1.4%2B16.g5b8581c/ldid-linux.gz" | tar -xzf - -C "${INSTALLPREFIX}/bin"
+curl -#Lo "${INSTALLPREFIX}/bin/ldid" "https://github.com/ProcursusTeam/ldid/releases/download/v2.1.5-procursus5/ldid_linux_$(uname -m)"
 
 info "Packaging toolchain"
 mkdir -p "${PACKAGES}"
