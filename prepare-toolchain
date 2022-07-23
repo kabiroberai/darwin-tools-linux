@@ -9,6 +9,7 @@ ROOT="${PWD}"
 STAGING="${ROOT}/staging"
 PACKAGES="${ROOT}/packages"
 export INSTALLPREFIX="${STAGING}/linux/iphone"
+export JOBS=8
 
 info "Creating prefix dir"
 rm -rf "${STAGING}"
@@ -18,7 +19,7 @@ info "Building libtapi"
 cd "${ROOT}/apple-libtapi"
 ./build.sh
 ./install.sh
-make -C "${ROOT}/apple-libtapi/build" install-tapi
+make -C "${ROOT}/apple-libtapi/build" install-tapi -j "${JOBS}"
 
 info "Building cctools"
 cd "${ROOT}/cctools-port/cctools"
@@ -27,18 +28,19 @@ cd "${ROOT}/cctools-port/cctools"
 	--with-libtapi="${INSTALLPREFIX}" \
 	--target="aarch64-apple-darwin14" \
 	LDFLAGS="-Wl,-rpath,'\$\$ORIGIN/../lib' -Wl,-z,origin"
-make
+make -j "${JOBS}"
 make install
 
 info "Modifying toolchain"
 cd "${INSTALLPREFIX}/bin"
 for file in *; do
-	mv "${file}" "${file#aarch64-apple-darwin14-}"
+	mv "${file}" "${file#aarch64-apple-darwin14-}" || :
 done
 
 info "Installing ldid"
 # TODO: Maybe build ldid ourselves?
 curl -#Lo "${INSTALLPREFIX}/bin/ldid" "https://github.com/ProcursusTeam/ldid/releases/download/v2.1.5-procursus5/ldid_linux_$(uname -m)"
+chmod +x "${INSTALLPREFIX}/bin/ldid"
 
 info "Packaging toolchain"
 mkdir -p "${PACKAGES}"
