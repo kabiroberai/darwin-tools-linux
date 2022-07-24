@@ -32,9 +32,8 @@ cd "${ROOT}/cctools-port/cctools"
 make -j "${JOBS}" install
 
 info "Installing ldid"
-# TODO: Maybe build ldid ourselves?
-curl -#Lo "${INSTALLPREFIX}/bin/ldid" "https://github.com/ProcursusTeam/ldid/releases/download/v2.1.5-procursus5/ldid_linux_$(uname -m)"
-chmod +x "${INSTALLPREFIX}/bin/ldid"
+cd "${ROOT}/ldid"
+make -j "${JOBS}" DESTDIR="${INSTALLPREFIX}" PREFIX="" install
 
 info "Packaging toolchain"
 mkdir -p "${PACKAGES}"
