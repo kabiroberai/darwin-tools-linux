@@ -4,3 +4,6 @@
 [submodule "cctools-port"]
 	path = cctools-port
 	url = https://github.com/tpoechtrager/cctools-port.git
+[submodule "ldid"]
+	path = ldid
+	url = https://github.com/ProcursusTeam/ldid.git
