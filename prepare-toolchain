@@ -27,15 +27,9 @@ cd "${ROOT}/cctools-port/cctools"
 	--prefix="${INSTALLPREFIX}" \
 	--with-libtapi="${INSTALLPREFIX}" \
 	--target="aarch64-apple-darwin14" \
+	--program-transform-name="s/^aarch64-apple-darwin14-//" \
 	LDFLAGS="-Wl,-rpath,'\$\$ORIGIN/../lib' -Wl,-z,origin"
-make -j "${JOBS}"
-make install
-
-info "Modifying toolchain"
-cd "${INSTALLPREFIX}/bin"
-for file in *; do
-	mv "${file}" "${file#aarch64-apple-darwin14-}" || :
-done
+make -j "${JOBS}" install
 
 info "Installing ldid"
 # TODO: Maybe build ldid ourselves?
