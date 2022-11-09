@@ -8,7 +8,7 @@ info() { echo "[info] $1"; }
 ROOT="${PWD}"
 STAGING="${ROOT}/staging"
 PACKAGES="${ROOT}/packages"
-export INSTALLPREFIX="${STAGING}/linux/iphone"
+export INSTALLPREFIX="${STAGING}/prefix/linux/iphone"
 export JOBS=8
 
 info "Creating prefix dir"
@@ -29,15 +29,26 @@ cd "${ROOT}/cctools-port/cctools"
 	--target="aarch64-apple-darwin14" \
 	--program-prefix="" \
 	LDFLAGS="-Wl,-rpath,'\$\$ORIGIN/../lib' -Wl,-z,origin"
-make -j "${JOBS}" install PROGRAM_PREFIX=""
+make -j "${JOBS}" PROGRAM_PREFIX="" install
+
+info "Building libplist"
+cd "${ROOT}/libplist"
+PLIST_PREFIX="${STAGING}/libplist-install"
+mkdir -p "${PLIST_PREFIX}"
+LC_ALL=C ./autogen.sh --prefix="${PLIST_PREFIX}" --without-cython PACKAGE_VERSION=latest
+make install
 
 info "Installing ldid"
 cd "${ROOT}/ldid"
-make -j "${JOBS}" DESTDIR="${INSTALLPREFIX}" PREFIX="" install
+make -j "${JOBS}" \
+	DESTDIR="${INSTALLPREFIX}" PREFIX="" \
+	LIBCRYPTO_LIBS="-l:libcrypto.a -lpthread -ldl" \
+	LIBPLIST_LIBS="${PLIST_PREFIX}/lib/libplist-2.0.a" LIBPLIST_INCLUDES="-I${PLIST_PREFIX}/include" \
+	install
 
 info "Packaging toolchain"
 mkdir -p "${PACKAGES}"
-cd "${STAGING}"
+cd "${STAGING}/prefix"
 tar -czf "${PACKAGES}/darwin-tools.tar.gz" linux
 
 info "Done!"

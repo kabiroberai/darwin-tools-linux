@@ -7,3 +7,6 @@
 [submodule "ldid"]
 	path = ldid
 	url = https://github.com/ProcursusTeam/ldid.git
+[submodule "libplist"]
+	path = libplist
+	url = https://github.com/libimobiledevice/libplist.git
