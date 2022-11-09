@@ -28,9 +28,8 @@ cd "${ROOT}/cctools-port/cctools"
 	--with-libtapi="${INSTALLPREFIX}" \
 	--target="aarch64-apple-darwin14" \
 	--program-prefix="" \
-	LDFLAGS="-Wl,-rpath,'\$\$ORIGIN/../lib' -Wl,-z,origin" \
-	PROGRAM_PREFIX=""
-make -j "${JOBS}" install
+	LDFLAGS="-Wl,-rpath,'\$\$ORIGIN/../lib' -Wl,-z,origin"
+make -j "${JOBS}" install PROGRAM_PREFIX=""
 
 info "Installing ldid"
 cd "${ROOT}/ldid"
