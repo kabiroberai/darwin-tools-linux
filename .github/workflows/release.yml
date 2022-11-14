@@ -6,62 +6,60 @@ on:
     - '*'
 
 jobs:
-  create_release:
-    # https://github.com/actions/create-release/issues/14#issuecomment-555379810
-    runs-on: ubuntu-20.04
-    steps:
-    - name: Setup
-      id: setup
-      run: echo "::set-output name=tag::${GITHUB_REF#refs/tags/}"
-    - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ github.ref }}
-        release_name: ${{ steps.setup.outputs.tag }}
-        body: ''
-        draft: true
-    - name: Save Upload URL to File
-      run: printf "%s" "${{ steps.create_release.outputs.upload_url }}" > upload_url.txt
-    - name: Save Upload URL as Artifact
-      uses: actions/upload-artifact@v2
-      with:
-        name: upload_url
-        path: upload_url.txt
-
   build:
-    needs: create_release
     strategy:
       matrix:
         os:
+          - runner: ubuntu-22.04
+            name: ubuntu22.04
           - runner: ubuntu-20.04
             name: ubuntu20.04
           - runner: ubuntu-18.04
             name: ubuntu18.04
     runs-on: ${{ matrix.os.runner }}
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@main
       with:
         submodules: true
-    - name: Fetch Upload URL
-      uses: actions/download-artifact@v2
-      with:
-        name: upload_url
+
     - name: Build Release
       id: build_release
       run: |
-        echo "::set-output name=tag::${GITHUB_REF#refs/tags/}"
-        echo "::set-output name=upload_url::$(cat upload_url.txt)"
-        rm upload_url.txt
-        ./prepare-toolchain
-    - name: Upload Release
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        ./prepare-toolchain && mv packages/darwin-tools.tar.gz packages/darwin-tools-${{ matrix.os.name }}.tar.gz
+
+    - uses: actions/upload-artifact@main
       with:
-        upload_url: ${{ steps.build_release.outputs.upload_url }}
-        asset_path: packages/darwin-tools.tar.gz
-        asset_name: darwin-tools-${{ matrix.os.name }}.tar.gz
-        asset_content_type: application/gzip
+        name: ${{ matrix.os.name }}-tools
+        path: packages/darwin-tools-${{ matrix.os.name }}.tar.gz
+
+  upload:
+    needs: build
+    runs-on: ubuntu-latest
+    env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+    - uses: actions/checkout@main
+    - name: Download Artifacts
+      uses: actions/download-artifact@main
+
+    - name: Set TAG Variable
+      run: |
+        echo "TAG=${GITHUB_REF#refs/tags/}" >> "$GITHUB_ENV"
+
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      with:
+        tag_name: $TAG
+        release_name: $TAG
+        body: ''
+        draft: true
+
+    - name: Attach Builds To Release
+      run: |
+        set -x
+        toolchains=()
+        for tc in **/*.tar.gz; do
+          toolchains+=("-a" "$tc")
+        done
+        hub release edit "${toolchains[@]}" -m "$TAG" "$TAG"
