@@ -29,7 +29,10 @@ cd "${ROOT}/cctools-port/cctools"
 	--target="aarch64-apple-darwin14" \
 	--program-prefix="" \
 	LDFLAGS="-Wl,-rpath,'\$\$ORIGIN/../lib' -Wl,-z,origin"
-make -j "${JOBS}" PROGRAM_PREFIX="" install
+make -j "${JOBS}" \
+	PROGRAM_PREFIX="" \
+	CXXABI_LIB="-l:libc++abi.a" \
+	install
 
 info "Building libplist"
 cd "${ROOT}/libplist"
