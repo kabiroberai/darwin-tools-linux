@@ -50,10 +50,12 @@ jobs:
     - name: Build Release
       id: build_release
       run: |
+        curl -fsSL https://apt.llvm.org/llvm.sh | bash -s -- 14
+        apt-get install -y --no-install-recommends clang-14 libc++-14-dev libc++abi-14-dev
         echo "::set-output name=tag::${GITHUB_REF#refs/tags/}"
         echo "::set-output name=upload_url::$(cat upload_url.txt)"
         rm upload_url.txt
-        ./prepare-toolchain
+        CC=clang-14 CXX=clang++-14 ./prepare-toolchain
     - name: Upload Release
       uses: actions/upload-release-asset@v1
       env:
