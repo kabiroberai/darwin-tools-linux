@@ -1,18 +1,14 @@
 name: Create Release
 
 on:
-  push:
-    tags:
-    - '*'
+  - push
+  - workflow_dispatch
 
 jobs:
   create_release:
     # https://github.com/actions/create-release/issues/14#issuecomment-555379810
     runs-on: ubuntu-20.04
     steps:
-    - name: Setup
-      id: setup
-      run: echo "::set-output name=tag::${GITHUB_REF#refs/tags/}"
     - name: Create Release
       id: create_release
       uses: actions/create-release@v1
@@ -20,7 +16,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         tag_name: ${{ github.ref }}
-        release_name: ${{ steps.setup.outputs.tag }}
+        release_name: Draft Release
         body: ''
         draft: true
     - name: Save Upload URL to File
@@ -35,12 +31,14 @@ jobs:
     needs: create_release
     strategy:
       matrix:
-        os:
+        include:
+          - runner: ubuntu-22.04
+            name: ubuntu22.04
           - runner: ubuntu-20.04
             name: ubuntu20.04
           - runner: ubuntu-18.04
             name: ubuntu18.04
-    runs-on: ${{ matrix.os.runner }}
+    runs-on: ${{ matrix.runner }}
     steps:
     - uses: actions/checkout@v2
       with:
@@ -63,5 +61,5 @@ jobs:
       with:
         upload_url: ${{ steps.build_release.outputs.upload_url }}
         asset_path: packages/darwin-tools.tar.gz
-        asset_name: darwin-tools-${{ matrix.os.name }}.tar.gz
+        asset_name: darwin-tools-${{ matrix.name }}.tar.gz
         asset_content_type: application/gzip
