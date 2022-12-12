@@ -50,7 +50,7 @@ jobs:
     - name: Build Release
       id: build_release
       run: |
-        curl -fsSL https://apt.llvm.org/llvm.sh | bash -s -- 14
+        curl -fsSL https://apt.llvm.org/llvm.sh | sudo bash -s -- 14
         apt-get install -y --no-install-recommends clang-14 libc++-14-dev libc++abi-14-dev
         echo "::set-output name=tag::${GITHUB_REF#refs/tags/}"
         echo "::set-output name=upload_url::$(cat upload_url.txt)"
