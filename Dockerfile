@@ -1,4 +1,5 @@
-FROM ubuntu:20.04
+ARG dist
+FROM ${dist:-ubuntu:22.04}
 
 RUN export DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true \
     && apt-get update \
