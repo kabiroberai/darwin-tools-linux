@@ -4,64 +4,47 @@ on:
   - push
   - workflow_dispatch
 
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
 jobs:
   create_release:
-    # https://github.com/actions/create-release/issues/14#issuecomment-555379810
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
     - name: Create Release
       id: create_release
       uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: ${{ github.ref }}
+        tag_name: ${{ github.ref_name }}
         release_name: Draft Release
         body: ''
         draft: true
-    - name: Save Upload URL to File
-      run: printf "%s" "${{ steps.create_release.outputs.upload_url }}" > upload_url.txt
-    - name: Save Upload URL as Artifact
-      uses: actions/upload-artifact@v2
-      with:
-        name: upload_url
-        path: upload_url.txt
 
   build:
     needs: create_release
     strategy:
       matrix:
-        include:
+        os:
           - runner: ubuntu-22.04
             name: ubuntu22.04
           - runner: ubuntu-20.04
             name: ubuntu20.04
           - runner: ubuntu-18.04
             name: ubuntu18.04
-    runs-on: ${{ matrix.runner }}
+    runs-on: ${{ matrix.os.runner }}
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@main
       with:
         submodules: true
-    - name: Fetch Upload URL
-      uses: actions/download-artifact@v2
-      with:
-        name: upload_url
+
     - name: Build Release
       id: build_release
       run: |
         curl -fsSL https://apt.llvm.org/llvm.sh | sudo bash -s -- 14
-        sudo apt-get install -y --no-install-recommends clang-14 libc++-14-dev libc++abi-14-dev
-        echo "::set-output name=tag::${GITHUB_REF#refs/tags/}"
-        echo "::set-output name=upload_url::$(cat upload_url.txt)"
-        rm upload_url.txt
-        CC=clang-14 CXX=clang++-14 ./prepare-toolchain
-    - name: Upload Release
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.build_release.outputs.upload_url }}
-        asset_path: packages/darwin-tools.tar.gz
-        asset_name: darwin-tools-${{ matrix.name }}.tar.gz
-        asset_content_type: application/gzip
+        sudo apt install -y --no-install-recommends clang-14 libc++-14-dev libc++abi-14-dev
+        CC=clang-14 CXX=clang++-14 ./prepare-toolchain && mv packages/darwin-tools.tar.gz packages/darwin-tools-${{ matrix.os.name }}.tar.gz
+
+    - name: Attach Build To Release
+      run: |
+        set -x
+        gh release upload ${GITHUB_REF##*/} packages/darwin-tools-${{ matrix.os.name }}.tar.gz
