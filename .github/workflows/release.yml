@@ -1,8 +1,8 @@
 name: Create Release
 
 on:
-  - push
-  - workflow_dispatch
+  push:
+  workflow_dispatch:
 
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -11,27 +11,23 @@ jobs:
   create_release:
     runs-on: ubuntu-latest
     steps:
+    - uses: actions/checkout@main
     - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1
-      with:
-        tag_name: ${{ github.ref_name }}
-        release_name: Draft Release
-        body: ''
-        draft: true
+      run: |
+        set -x
+        TAG="${GITHUB_REF##*/}-${GITHUB_SHA:0:7}"
+        gh release create "$TAG" --draft --title "Draft Release"
 
   build:
     needs: create_release
     strategy:
       matrix:
         os:
-          - runner: ubuntu-22.04
-            name: ubuntu22.04
-          - runner: ubuntu-20.04
-            name: ubuntu20.04
-          - runner: ubuntu-18.04
-            name: ubuntu18.04
-    runs-on: ${{ matrix.os.runner }}
+          - ubuntu-22.04
+          - ubuntu-20.04
+          - ubuntu-18.04
+
+    runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@main
       with:
@@ -42,9 +38,9 @@ jobs:
       run: |
         curl -fsSL https://apt.llvm.org/llvm.sh | sudo bash -s -- 14
         sudo apt install -y --no-install-recommends clang-14 libc++-14-dev libc++abi-14-dev
-        CC=clang-14 CXX=clang++-14 ./prepare-toolchain && mv packages/darwin-tools.tar.gz packages/darwin-tools-${{ matrix.os.name }}.tar.gz
+        CC=clang-14 CXX=clang++-14 ./prepare-toolchain && mv packages/darwin-tools.tar.gz packages/darwin-tools-${{ matrix.os }}.tar.gz
 
     - name: Attach Build To Release
       run: |
-        set -x
-        gh release upload ${GITHUB_REF##*/} packages/darwin-tools-${{ matrix.os.name }}.tar.gz
+        TAG="${GITHUB_REF##*/}-${GITHUB_SHA:0:7}"
+        gh release upload "$TAG" packages/darwin-tools-${{ matrix.os }}.tar.gz
