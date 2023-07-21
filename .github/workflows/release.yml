@@ -36,8 +36,6 @@ jobs:
             name: ubuntu22.04
           - runner: ubuntu-20.04
             name: ubuntu20.04
-          - runner: ubuntu-18.04
-            name: ubuntu18.04
     runs-on: ${{ matrix.runner }}
     steps:
     - uses: actions/checkout@v2
