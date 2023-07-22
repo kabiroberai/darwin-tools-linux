@@ -21,11 +21,16 @@ info "Creating prefix dir"
 rm -rf "${STAGING}"
 mkdir -p "${INSTALLPREFIX}"
 
-info "Building libtapi"
-cd "${ROOT}/apple-libtapi"
-./build.sh
-./install.sh
-make -C "${ROOT}/apple-libtapi/build" install-tapi -j "${JOBS}"
+info "Building LLVM tools"
+mkdir -p "${ROOT}/apple-libtapi/build"
+cd "${ROOT}/apple-libtapi/build"
+cmake ../src/llvm \
+	-DCMAKE_CXX_FLAGS="-I${PWD}/../src/llvm/projects/clang/include -I${PWD}/projects/clang/include" \
+	-DLLVM_INCLUDE_TESTS=OFF \
+	-DCMAKE_BUILD_TYPE=RELEASE \
+	-DCMAKE_INSTALL_PREFIX="${INSTALLPREFIX}"
+make clangBasic -j "${JOBS}"
+make libtapi dsymutil install-libtapi install-tapi-headers install-tapi install-dsymutil -j "${JOBS}"
 
 info "Building cctools"
 cd "${ROOT}/cctools-port/cctools"
