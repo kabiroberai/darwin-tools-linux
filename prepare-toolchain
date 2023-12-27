@@ -26,7 +26,8 @@ cd "${ROOT}/apple-libtapi/"
 cmake -B build -S src/llvm \
 	-DLLVM_TARGETS_TO_BUILD="X86;ARM;AArch64" \
 	-DLLVM_INCLUDE_TESTS=OFF \
-	-DCMAKE_CXX_FLAGS="-I${PWD}/../src/llvm/projects/clang/include -I${PWD}/projects/clang/include" \
+	-DLLVM_ENABLE_WARNINGS=OFF \
+	-DCMAKE_CXX_FLAGS="-I${PWD}/src/llvm/projects/clang/include/ -I${PWD}/build/projects/clang/include/" \
 	-DCMAKE_BUILD_TYPE=Release \
 	-DCMAKE_INSTALL_PREFIX="${INSTALLPREFIX}"
 cmake --build build --target libtapi dsymutil install-libtapi install-tapi-headers install-tapi install-dsymutil -- -j "${JOBS}"
