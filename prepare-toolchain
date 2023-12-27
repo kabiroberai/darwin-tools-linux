@@ -19,18 +19,17 @@ fi
 
 info "Creating prefix dir"
 rm -rf "${STAGING}"
-mkdir -p "${INSTALLPREFIX}"
+mkdir -pv "${INSTALLPREFIX}"
 
 info "Building LLVM tools"
-mkdir -p "${ROOT}/apple-libtapi/build"
-cd "${ROOT}/apple-libtapi/build"
-cmake ../src/llvm \
-	-DCMAKE_CXX_FLAGS="-I${PWD}/../src/llvm/projects/clang/include -I${PWD}/projects/clang/include" \
+cd "${ROOT}/apple-libtapi/"
+cmake -B build -S src/llvm \
+	-DLLVM_TARGETS_TO_BUILD="X86;ARM;AArch64" \
 	-DLLVM_INCLUDE_TESTS=OFF \
-	-DCMAKE_BUILD_TYPE=RELEASE \
+	-DCMAKE_CXX_FLAGS="-I${PWD}/../src/llvm/projects/clang/include -I${PWD}/projects/clang/include" \
+	-DCMAKE_BUILD_TYPE=Release \
 	-DCMAKE_INSTALL_PREFIX="${INSTALLPREFIX}"
-make clangBasic -j "${JOBS}"
-make libtapi dsymutil install-libtapi install-tapi-headers install-tapi install-dsymutil -j "${JOBS}"
+cmake --build build --target libtapi dsymutil install-libtapi install-tapi-headers install-tapi install-dsymutil -- -j "${JOBS}"
 
 info "Building cctools"
 cd "${ROOT}/cctools-port/cctools"
@@ -62,7 +61,6 @@ make -j "${JOBS}" \
 
 info "Packaging toolchain"
 mkdir -p "${PACKAGES}"
-cd "${STAGING}/prefix"
-tar -czf "${PACKAGES}/darwin-tools.tar.gz" linux
+tar -czf "${PACKAGES}/darwin-tools.tar.gz" -C "${STAGING}/prefix" linux
 
 info "Done!"
