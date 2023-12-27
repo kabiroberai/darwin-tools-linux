@@ -51,6 +51,7 @@ PLIST_PREFIX="${STAGING}/libplist-install"
 mkdir -p "${PLIST_PREFIX}"
 LC_ALL=C ./autogen.sh --prefix="${PLIST_PREFIX}" --without-cython PACKAGE_VERSION=latest
 make -j "${JOBS}" install
+cp -av "${PLIST_PREFIX}/bin/plistutil" "${INSTALLPREFIX}/bin"
 
 info "Installing ldid"
 cd "${ROOT}/ldid"
