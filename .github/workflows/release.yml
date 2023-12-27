@@ -22,11 +22,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os:
-          - ubuntu-22.04
-          - ubuntu-20.04
+        include:
+          - runner: ubuntu-22.04
+            name: ubuntu22.04
+          - runner: ubuntu-20.04
+            name: ubuntu20.04
+          - runner: ubuntu-18.04
+            name: ubuntu18.04
 
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.runner }}
     steps:
     - uses: actions/checkout@v4
       with:
@@ -38,9 +42,9 @@ jobs:
         curl -fsSL https://apt.llvm.org/llvm.sh | sudo bash -s -- 14
         sudo apt install -y --no-install-recommends clang-14 libc++-14-dev libc++abi-14-dev
         CC=clang-14 CXX=clang++-14 ./prepare-toolchain
-        mv packages/darwin-tools.tar.gz packages/darwin-tools-${{ matrix.os }}.tar.gz
+        mv packages/darwin-tools.tar.gz packages/darwin-tools-${{ matrix.name }}.tar.gz
 
     - name: Attach Build To Release
       run: |
         TAG="${GITHUB_REF##*/}-${GITHUB_SHA:0:7}"
-        gh release upload "$TAG" packages/darwin-tools-${{ matrix.os }}.tar.gz
+        gh release upload "$TAG" packages/*.tar.gz
