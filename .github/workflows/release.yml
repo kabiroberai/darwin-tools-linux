@@ -4,62 +4,81 @@ on:
   - push
   - workflow_dispatch
 
-jobs:
-  create_release:
-    # https://github.com/actions/create-release/issues/14#issuecomment-555379810
-    runs-on: ubuntu-20.04
-    steps:
-    - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ github.ref }}
-        release_name: Draft Release
-        body: ''
-        draft: true
-    - name: Save Upload URL to File
-      run: printf "%s" "${{ steps.create_release.outputs.upload_url }}" > upload_url.txt
-    - name: Save Upload URL as Artifact
-      uses: actions/upload-artifact@v2
-      with:
-        name: upload_url
-        path: upload_url.txt
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+jobs:
   build:
-    needs: create_release
     strategy:
+      fail-fast: false
       matrix:
         include:
-          - runner: ubuntu-22.04
-            name: ubuntu22.04
-          - runner: ubuntu-20.04
+          - runner: ubuntu:20.04
             name: ubuntu20.04
-    runs-on: ${{ matrix.runner }}
+          - runner: ubuntu:22.04
+            name: ubuntu22.04
+          - runner: archlinux:base-devel
+            name: arch
+          - runner: fedora:38
+            name: ubi9
+          - runner: arm64v8/ubuntu:20.04
+            name: ubuntu20.04-aarch64
+          - runner: arm64v8/ubuntu:22.04
+            name: ubuntu22.04-aarch64
+          - runner: lopsided/archlinux-arm64v8:devel
+            name: arch-aarch64
+          - runner: arm64v8/fedora:38
+            name: ubi9-aarch64
+
+    runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
       with:
         submodules: true
-    - name: Fetch Upload URL
-      uses: actions/download-artifact@v2
-      with:
-        name: upload_url
-    - name: Build Release
-      id: build_release
+
+    - name: QEMU fix
       run: |
-        curl -fsSL https://apt.llvm.org/llvm.sh | sudo bash -s -- 14
-        sudo apt-get install -y --no-install-recommends clang-14 libc++-14-dev libc++abi-14-dev
-        echo "::set-output name=tag::${GITHUB_REF#refs/tags/}"
-        echo "::set-output name=upload_url::$(cat upload_url.txt)"
-        rm upload_url.txt
-        CC=clang-14 CXX=clang++-14 ./prepare-toolchain
-    - name: Upload Release
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        if echo "${{ matrix.name }}" | grep "aarch64"; then
+          docker run --rm --privileged hypriot/qemu-register
+        else
+          echo "Not aarch64; no fix needed..."
+        fi
+
+    - name: Build Release
+      run: |
+        # No amd64 aarch64 image for Fedora so need to be explicit (breaks other distros' docker run cmds)
+        platform_flag=$(if [ "${{ matrix.name }}" = "ubi9-aarch64" ]; then echo "--platform=linux/arm64"; else echo ""; fi)
+        docker run $platform_flag \
+          --rm \
+          -v /qemu-aarch64:/usr/bin/qemu-aarch64 \
+          -v $PWD:/workspace \
+          -w /workspace \
+          ${{ matrix.runner }} \
+          sh -c "
+            ./prepare-env ${{ matrix.name }}
+            CC=clang CXX=clang++ ./prepare-toolchain
+            mv packages/darwin-tools.tar.gz packages/darwin-tools-${{ matrix.name }}.tar.gz
+          "
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
       with:
-        upload_url: ${{ steps.build_release.outputs.upload_url }}
-        asset_path: packages/darwin-tools.tar.gz
-        asset_name: darwin-tools-${{ matrix.name }}.tar.gz
-        asset_content_type: application/gzip
+        name: DT-${{ matrix.name }}
+        path: packages/darwin-tools-${{ matrix.name }}.tar.gz
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          pattern: DT-*
+          path: packages
+
+      - name: Create and publish release
+        run: |
+          TAG="${GITHUB_REF##*/}-${GITHUB_SHA:0:7}"
+          gh release create "$TAG" --draft --title "Draft Release"
+          gh release upload "$TAG" packages/**/*.tar.gz
