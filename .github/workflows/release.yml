@@ -8,41 +8,77 @@ env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
-  create_release:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    - name: Create Release
-      run: |
-        TAG="${GITHUB_REF##*/}-${GITHUB_SHA:0:7}"
-        gh release create "$TAG" --draft --title "Draft Release"
-
   build:
-    needs: create_release
     strategy:
       fail-fast: false
       matrix:
         include:
-          - runner: ubuntu-22.04
-            name: ubuntu22.04
-          - runner: ubuntu-20.04
+          - runner: ubuntu:20.04
             name: ubuntu20.04
+          - runner: ubuntu:22.04
+            name: ubuntu22.04
+          - runner: archlinux:base-devel
+            name: arch
+          - runner: fedora:38
+            name: ubi9
+          - runner: arm64v8/ubuntu:20.04
+            name: ubuntu20.04-aarch64
+          - runner: arm64v8/ubuntu:22.04
+            name: ubuntu22.04-aarch64
+          - runner: lopsided/archlinux-arm64v8:devel
+            name: arch-aarch64
+          - runner: arm64v8/fedora:38
+            name: ubi9-aarch64
 
-    runs-on: ${{ matrix.runner }}
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
       with:
         submodules: true
 
-    - name: Build Release
-      id: build_release
+    - name: QEMU fix
       run: |
-        curl -fsSL https://apt.llvm.org/llvm.sh | sudo bash -s -- 14
-        sudo apt install -y --no-install-recommends clang-14 libc++-14-dev libc++abi-14-dev
-        CC=clang-14 CXX=clang++-14 ./prepare-toolchain
-        mv packages/darwin-tools.tar.gz packages/darwin-tools-${{ matrix.name }}.tar.gz
+        if echo "${{ matrix.name }}" | grep "aarch64"; then
+          docker run --rm --privileged hypriot/qemu-register
+        else
+          echo "Not aarch64; no fix needed..."
+        fi
 
-    - name: Attach Build To Release
+    - name: Build Release
       run: |
-        TAG="${GITHUB_REF##*/}-${GITHUB_SHA:0:7}"
-        gh release upload "$TAG" packages/*.tar.gz
+        # No amd64 aarch64 image for Fedora so need to be explicit (breaks other distros' docker run cmds)
+        platform_flag=$(if [ "${{ matrix.name }}" = "ubi9-aarch64" ]; then echo "--platform=linux/arm64"; else echo ""; fi)
+        docker run $platform_flag \
+          --rm \
+          -v /qemu-aarch64:/usr/bin/qemu-aarch64 \
+          -v $PWD:/workspace \
+          -w /workspace \
+          ${{ matrix.runner }} \
+          sh -c "
+            ./prepare-env ${{ matrix.name }}
+            CC=clang CXX=clang++ ./prepare-toolchain
+            mv packages/darwin-tools.tar.gz packages/darwin-tools-${{ matrix.name }}.tar.gz
+          "
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: DT-${{ matrix.name }}
+        path: packages/darwin-tools-${{ matrix.name }}.tar.gz
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          pattern: DT-*
+          path: packages
+
+      - name: Create and publish release
+        run: |
+          TAG="${GITHUB_REF##*/}-${GITHUB_SHA:0:7}"
+          gh release create "$TAG" --draft --title "Draft Release"
+          gh release upload "$TAG" packages/**/*.tar.gz
