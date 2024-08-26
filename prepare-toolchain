@@ -18,25 +18,37 @@ else
 fi
 
 info "Creating prefix dir"
-rm -rf "${STAGING}"
 mkdir -p "${INSTALLPREFIX}"
+rm -rf "${INSTALLPREFIX}"
 
 info "Building LLVM tools"
-mkdir -p "${ROOT}/apple-libtapi/build"
-cd "${ROOT}/apple-libtapi/build"
-cmake ../src/llvm \
+mkdir -p "${STAGING}/build/apple-libtapi"
+cd "${STAGING}/build/apple-libtapi"
+cmake "${ROOT}/apple-libtapi/src/llvm" \
 	-DCMAKE_CXX_FLAGS="-I${PWD}/../src/llvm/projects/clang/include -I${PWD}/projects/clang/include" \
 	-DLLVM_INCLUDE_TESTS=OFF \
 	-DCMAKE_BUILD_TYPE=RELEASE \
+	-DLLVM_ENABLE_PROJECTS="tapi;clang" \
 	-DCMAKE_INSTALL_PREFIX="${INSTALLPREFIX}"
 make clangBasic -j "${JOBS}"
-make libtapi dsymutil install-libtapi install-tapi-headers install-tapi install-dsymutil -j "${JOBS}"
+make libtapi dsymutil install-libtapi install-tapi-headers install-dsymutil -j "${JOBS}"
+
+info "Building libdispatch"
+mkdir -p "${STAGING}/build/apple-libdispatch"
+cd "${STAGING}/build/apple-libdispatch"
+cmake "${ROOT}/apple-libdispatch" \
+	-DCMAKE_BUILD_TYPE=RELEASE \
+	-DCMAKE_INSTALL_PREFIX="$INSTALLPREFIX"
+make -j "${JOBS}" install
 
 info "Building cctools"
-cd "${ROOT}/cctools-port/cctools"
-./configure \
+mkdir -p "${STAGING}/build/cctools"
+cd "${STAGING}/build/cctools"
+"${ROOT}/cctools-port/cctools/configure" \
 	--prefix="${INSTALLPREFIX}" \
 	--with-libtapi="${INSTALLPREFIX}" \
+	--with-libdispatch="${INSTALLPREFIX}" \
+	--with-libblocksruntime="${INSTALLPREFIX}" \
 	--target="aarch64-apple-darwin14" \
 	--program-prefix="" \
 	LDFLAGS="-Wl,-rpath,'\$\$ORIGIN/../lib' -Wl,-z,origin"
@@ -48,11 +60,13 @@ make -j "${JOBS}" \
 info "Building libplist"
 cd "${ROOT}/libplist"
 PLIST_PREFIX="${STAGING}/libplist-install"
-mkdir -p "${PLIST_PREFIX}"
-LC_ALL=C ./autogen.sh --prefix="${PLIST_PREFIX}" --without-cython PACKAGE_VERSION=latest
+mkdir -p "${PLIST_PREFIX}" "${STAGING}/build/libplist"
+LC_ALL=C NOCONFIGURE=1 ./autogen.sh
+cd "${STAGING}/build/libplist"
+LC_ALL=C "${ROOT}/libplist/configure" --prefix="${PLIST_PREFIX}" --without-cython PACKAGE_VERSION=latest
 make -j "${JOBS}" install
 
-info "Installing ldid"
+info "Building ldid"
 cd "${ROOT}/ldid"
 make -j "${JOBS}" \
 	DESTDIR="${INSTALLPREFIX}" PREFIX="" \

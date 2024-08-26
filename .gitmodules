@@ -10,3 +10,6 @@
 [submodule "libplist"]
 	path = libplist
 	url = https://github.com/libimobiledevice/libplist.git
+[submodule "apple-libdispatch"]
+	path = apple-libdispatch
+	url = https://github.com/tpoechtrager/apple-libdispatch
