@@ -32,10 +32,12 @@ jobs:
     strategy:
       matrix:
         include:
-          - runner: ubuntu-22.04
-            name: ubuntu22.04
           - runner: ubuntu-20.04
             name: ubuntu20.04
+          - runner: ubuntu-22.04
+            name: ubuntu22.04
+          - runner: ubuntu-24.04
+            name: ubuntu24.04
     runs-on: ${{ matrix.runner }}
     steps:
     - uses: actions/checkout@v2
