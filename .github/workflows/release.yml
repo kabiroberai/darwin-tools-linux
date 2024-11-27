@@ -44,6 +44,19 @@ jobs:
     runs-on: ${{ matrix.runner }}
     container: ${{ matrix.container }}
     steps:
+    - name: Install dependencies (Ubuntu)
+      if: matrix.container == null
+      run: |
+        curl -fsSL https://apt.llvm.org/llvm.sh | sudo bash -s -- 18
+        sudo apt-get install -y --no-install-recommends clang-18 libc++-18-dev libc++abi-18-dev
+        echo "CC=clang-18" >> $GITHUB_ENV
+        echo "CXX=clang++-18" >> $GITHUB_ENV
+    - name: Install dependencies (Fedora)
+      if: matrix.container == 'fedora:39'
+      run: |
+        yum -y install binutils git-all clang libcxx-devel libcxxabi-devel libcxxabi-static cmake make automake which libtool openssl-devel
+        echo "CC=clang" >> $GITHUB_ENV
+        echo "CXX=clang++" >> $GITHUB_ENV
     - uses: actions/checkout@v4
       with:
         submodules: true
@@ -54,12 +67,10 @@ jobs:
     - name: Build Release
       id: build_release
       run: |
-        curl -fsSL https://apt.llvm.org/llvm.sh | sudo bash -s -- 18
-        sudo apt-get install -y --no-install-recommends clang-18 libc++-18-dev libc++abi-18-dev
         echo "::set-output name=tag::${GITHUB_REF#refs/tags/}"
         echo "::set-output name=upload_url::$(cat upload_url.txt)"
         rm upload_url.txt
-        CC=clang-18 CXX=clang++-18 ./prepare-toolchain
+        ./prepare-toolchain
     - name: Upload Release
       uses: actions/upload-release-asset@v1
       env:

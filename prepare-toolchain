@@ -51,7 +51,7 @@ cd "${STAGING}/build/cctools"
 	--with-libblocksruntime="${INSTALLPREFIX}" \
 	--target="aarch64-apple-darwin14" \
 	--program-prefix="" \
-	LDFLAGS="-Wl,-rpath,'\$\$ORIGIN/../lib' -Wl,-z,origin"
+	LDFLAGS="-Wl,-rpath,'\$\$ORIGIN/../lib' -Wl,-rpath,'\$\$ORIGIN/../lib64' -Wl,-z,origin"
 make -j "${JOBS}" \
 	PROGRAM_PREFIX="" \
 	CXXABI_LIB="-l:libc++abi.a" \
@@ -70,7 +70,6 @@ info "Building ldid"
 cd "${ROOT}/ldid"
 make -j "${JOBS}" \
 	DESTDIR="${INSTALLPREFIX}" PREFIX="" \
-	LIBCRYPTO_LIBS="-l:libcrypto.a -lpthread -ldl" \
 	LIBPLIST_LIBS="${PLIST_PREFIX}/lib/libplist-2.0.a" LIBPLIST_INCLUDES="-I${PLIST_PREFIX}/include" \
 	install
 

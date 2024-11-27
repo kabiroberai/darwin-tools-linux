@@ -1,0 +1,10 @@
+FROM fedora:39
+
+RUN yum -y install binutils git-all clang libcxx-devel libcxxabi-devel libcxxabi-static cmake make automake which libtool openssl-devel
+
+ENV CC=clang-18 CXX=clang++-18
+
+COPY . /work
+WORKDIR /work
+
+ENTRYPOINT [ "/bin/bash" ]
