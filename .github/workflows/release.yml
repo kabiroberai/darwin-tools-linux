@@ -7,7 +7,7 @@ on:
 jobs:
   create_release:
     # https://github.com/actions/create-release/issues/14#issuecomment-555379810
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     steps:
     - name: Create Release
       id: create_release
@@ -22,7 +22,7 @@ jobs:
     - name: Save Upload URL to File
       run: printf "%s" "${{ steps.create_release.outputs.upload_url }}" > upload_url.txt
     - name: Save Upload URL as Artifact
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: upload_url
         path: upload_url.txt
