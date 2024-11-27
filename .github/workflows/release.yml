@@ -38,7 +38,11 @@ jobs:
             name: ubuntu22.04
           - runner: ubuntu-24.04
             name: ubuntu24.04
+          - runner: ubuntu-24.04
+            name: fedora39
+            container: fedora:39
     runs-on: ${{ matrix.runner }}
+    container: ${{ matrix.container }}
     steps:
     - uses: actions/checkout@v2
       with:
