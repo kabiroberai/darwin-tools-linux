@@ -70,6 +70,7 @@ info "Building ldid"
 cd "${ROOT}/ldid"
 make -j "${JOBS}" \
 	DESTDIR="${INSTALLPREFIX}" PREFIX="" \
+	LIBCRYPTO_LIBS="-lcrypto -lpthread -ldl" \
 	LIBPLIST_LIBS="${PLIST_PREFIX}/lib/libplist-2.0.a" LIBPLIST_INCLUDES="-I${PLIST_PREFIX}/include" \
 	install
 
