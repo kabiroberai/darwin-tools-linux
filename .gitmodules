@@ -1,15 +1,15 @@
 [submodule "apple-libtapi"]
-	path = apple-libtapi
+	path = vendor/apple-libtapi
 	url = https://github.com/tpoechtrager/apple-libtapi.git
 [submodule "cctools-port"]
-	path = cctools-port
+	path = vendor/cctools-port
 	url = https://github.com/tpoechtrager/cctools-port.git
 [submodule "ldid"]
-	path = ldid
+	path = vendor/ldid
 	url = https://github.com/ProcursusTeam/ldid.git
 [submodule "libplist"]
-	path = libplist
+	path = vendor/libplist
 	url = https://github.com/libimobiledevice/libplist.git
 [submodule "apple-libdispatch"]
-	path = apple-libdispatch
+	path = vendor/apple-libdispatch
 	url = https://github.com/tpoechtrager/apple-libdispatch

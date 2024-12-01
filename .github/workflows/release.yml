@@ -32,31 +32,16 @@ jobs:
     strategy:
       matrix:
         include:
-          - runner: ubuntu-20.04
-            name: ubuntu20.04
-          - runner: ubuntu-22.04
-            name: ubuntu22.04
-          - runner: ubuntu-24.04
-            name: ubuntu24.04
-          - runner: ubuntu-24.04
-            name: fedora39
-            container: fedora:39
-    runs-on: ${{ matrix.runner }}
-    container: ${{ matrix.container }}
+          - name: ubuntu20.04
+            image: ubuntu:20.04
+          - name: ubuntu22.04
+            image: ubuntu:22.04
+          - name: ubuntu24.04
+            image: ubuntu:24.04
+          - name: fedora39
+            image: fedora:39
+    runs-on: ubuntu-24.04
     steps:
-    - name: Install dependencies (Ubuntu)
-      if: matrix.container == null
-      run: |
-        curl -fsSL https://apt.llvm.org/llvm.sh | sudo bash -s -- 18
-        sudo apt-get install -y --no-install-recommends clang-18 libc++-18-dev libc++abi-18-dev
-        echo "CC=clang-18" >> $GITHUB_ENV
-        echo "CXX=clang++-18" >> $GITHUB_ENV
-    - name: Install dependencies (Fedora)
-      if: matrix.container == 'fedora:39'
-      run: |
-        yum -y install binutils git-all clang libcxx-devel libcxxabi-devel libcxxabi-static cmake make automake which libtool openssl-devel
-        echo "CC=clang" >> $GITHUB_ENV
-        echo "CXX=clang++" >> $GITHUB_ENV
     - uses: actions/checkout@v4
       with:
         submodules: true
@@ -67,10 +52,10 @@ jobs:
     - name: Build Release
       id: build_release
       run: |
+        DARWIN_BUILD_BASE=${{ matrix.image }} docker compose run --build --rm builder -c ./prepare-toolchain
         echo "::set-output name=tag::${GITHUB_REF#refs/tags/}"
         echo "::set-output name=upload_url::$(cat upload_url.txt)"
         rm upload_url.txt
-        ./prepare-toolchain
     - name: Upload Release
       uses: actions/upload-release-asset@v1
       env:
