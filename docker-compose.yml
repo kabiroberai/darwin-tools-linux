@@ -3,7 +3,7 @@ services:
     build:
       context: .
       args:
-        DARWIN_BUILD_BASE: $DARWIN_BUILD_BASE
+        - DARWIN_BUILD_BASE
     volumes:
       - ./packages:/work/packages
     container_name: builder
