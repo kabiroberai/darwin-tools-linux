@@ -10,7 +10,7 @@ RUN export DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true \
         clang-18 libc++-18-dev libc++abi-18-dev \
     && rm -rf /var/lib/apt/lists/*
 
-ENV CC=clang-18 CXX=clang++-18
+ENV CC=clang CXX=clang++
 
 COPY . /work
 WORKDIR /work
