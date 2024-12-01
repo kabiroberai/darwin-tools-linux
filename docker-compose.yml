@@ -9,4 +9,3 @@ services:
     container_name: builder
     stdin_open: true
     tty: true
-
