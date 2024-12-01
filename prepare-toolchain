@@ -6,6 +6,7 @@ shopt -s extglob
 info() { echo "[info] $1"; }
 
 ROOT="${PWD}"
+VENDOR="${ROOT}/vendor"
 STAGING="${ROOT}/staging"
 PACKAGES="${ROOT}/packages"
 export INSTALLPREFIX="${STAGING}/prefix/linux/iphone"
@@ -24,7 +25,7 @@ rm -rf "${INSTALLPREFIX}"
 info "Building LLVM tools"
 mkdir -p "${STAGING}/build/apple-libtapi"
 cd "${STAGING}/build/apple-libtapi"
-cmake "${ROOT}/apple-libtapi/src/llvm" \
+cmake "${VENDOR}/apple-libtapi/src/llvm" \
 	-DCMAKE_CXX_FLAGS="-I${PWD}/../src/llvm/projects/clang/include -I${PWD}/projects/clang/include" \
 	-DLLVM_INCLUDE_TESTS=OFF \
 	-DCMAKE_BUILD_TYPE=RELEASE \
@@ -36,7 +37,7 @@ make libtapi dsymutil install-libtapi install-tapi-headers install-dsymutil -j "
 info "Building libdispatch"
 mkdir -p "${STAGING}/build/apple-libdispatch"
 cd "${STAGING}/build/apple-libdispatch"
-cmake "${ROOT}/apple-libdispatch" \
+cmake "${VENDOR}/apple-libdispatch" \
 	-DCMAKE_BUILD_TYPE=RELEASE \
 	-DCMAKE_INSTALL_PREFIX="$INSTALLPREFIX"
 make -j "${JOBS}" install
@@ -44,33 +45,33 @@ make -j "${JOBS}" install
 info "Building cctools"
 mkdir -p "${STAGING}/build/cctools"
 cd "${STAGING}/build/cctools"
-"${ROOT}/cctools-port/cctools/configure" \
+"${VENDOR}/cctools-port/cctools/configure" \
 	--prefix="${INSTALLPREFIX}" \
 	--with-libtapi="${INSTALLPREFIX}" \
 	--with-libdispatch="${INSTALLPREFIX}" \
 	--with-libblocksruntime="${INSTALLPREFIX}" \
 	--target="aarch64-apple-darwin14" \
 	--program-prefix="" \
-	LDFLAGS="-Wl,-rpath,'\$\$ORIGIN/../lib' -Wl,-z,origin"
+	LDFLAGS="-Wl,-rpath,'\$\$ORIGIN/../lib' -Wl,-rpath,'\$\$ORIGIN/../lib64' -Wl,-z,origin"
 make -j "${JOBS}" \
 	PROGRAM_PREFIX="" \
 	CXXABI_LIB="-l:libc++abi.a" \
 	install
 
 info "Building libplist"
-cd "${ROOT}/libplist"
+cd "${VENDOR}/libplist"
 PLIST_PREFIX="${STAGING}/libplist-install"
 mkdir -p "${PLIST_PREFIX}" "${STAGING}/build/libplist"
 LC_ALL=C NOCONFIGURE=1 ./autogen.sh
 cd "${STAGING}/build/libplist"
-LC_ALL=C "${ROOT}/libplist/configure" --prefix="${PLIST_PREFIX}" --without-cython PACKAGE_VERSION=latest
+LC_ALL=C "${VENDOR}/libplist/configure" --prefix="${PLIST_PREFIX}" --without-cython PACKAGE_VERSION=latest
 make -j "${JOBS}" install
 
 info "Building ldid"
-cd "${ROOT}/ldid"
+cd "${VENDOR}/ldid"
 make -j "${JOBS}" \
 	DESTDIR="${INSTALLPREFIX}" PREFIX="" \
-	LIBCRYPTO_LIBS="-l:libcrypto.a -lpthread -ldl" \
+	LIBCRYPTO_LIBS="-lcrypto -lpthread -ldl" \
 	LIBPLIST_LIBS="${PLIST_PREFIX}/lib/libplist-2.0.a" LIBPLIST_INCLUDES="-I${PLIST_PREFIX}/include" \
 	install
 

@@ -7,7 +7,7 @@ on:
 jobs:
   create_release:
     # https://github.com/actions/create-release/issues/14#issuecomment-555379810
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     steps:
     - name: Create Release
       id: create_release
@@ -22,7 +22,7 @@ jobs:
     - name: Save Upload URL to File
       run: printf "%s" "${{ steps.create_release.outputs.upload_url }}" > upload_url.txt
     - name: Save Upload URL as Artifact
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: upload_url
         path: upload_url.txt
@@ -32,30 +32,30 @@ jobs:
     strategy:
       matrix:
         include:
-          - runner: ubuntu-20.04
-            name: ubuntu20.04
-          - runner: ubuntu-22.04
-            name: ubuntu22.04
-          - runner: ubuntu-24.04
-            name: ubuntu24.04
-    runs-on: ${{ matrix.runner }}
+          - name: ubuntu20.04
+            image: ubuntu:20.04
+          - name: ubuntu22.04
+            image: ubuntu:22.04
+          - name: ubuntu24.04
+            image: ubuntu:24.04
+          - name: fedora39
+            image: fedora:39
+    runs-on: ubuntu-24.04
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
       with:
         submodules: true
     - name: Fetch Upload URL
-      uses: actions/download-artifact@v2
+      uses: actions/download-artifact@v4
       with:
         name: upload_url
     - name: Build Release
       id: build_release
       run: |
-        curl -fsSL https://apt.llvm.org/llvm.sh | sudo bash -s -- 18
-        sudo apt-get install -y --no-install-recommends clang-18 libc++-18-dev libc++abi-18-dev
+        DARWIN_BUILD_BASE=${{ matrix.image }} docker compose run --build --rm builder -c ./prepare-toolchain
         echo "::set-output name=tag::${GITHUB_REF#refs/tags/}"
         echo "::set-output name=upload_url::$(cat upload_url.txt)"
         rm upload_url.txt
-        CC=clang-18 CXX=clang++-18 ./prepare-toolchain
     - name: Upload Release
       uses: actions/upload-release-asset@v1
       env:
