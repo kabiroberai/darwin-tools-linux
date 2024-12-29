@@ -33,13 +33,12 @@ jobs:
       id: build_release
       run: |
         DARWIN_BUILD_BASE=${{ matrix.image }} docker compose run --build --rm builder -c ./prepare-toolchain
-        mv packages/darwin-tools.tar.gz packages/darwin-tools-${{ matrix.name }}.tar.gz
     - name: Upload artifact
       id: upload_artifact
       uses: actions/upload-artifact@v4
       with:
         name: DT-${{ matrix.name }}
-        path: packages/darwin-tools-${{ matrix.name }}.tar.gz
+        path: packages/darwin-tools.tar.gz
 
   release:
     needs: build
