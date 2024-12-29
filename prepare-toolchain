@@ -25,20 +25,20 @@ rm -rf "${INSTALLPREFIX}"
 info "Building LLVM tools"
 mkdir -p "${STAGING}/build/"
 cd "${STAGING}/build/"
-cmake -B apple-libtapi -S "${VENDOR}/apple-libtapi/src/llvm" \
+cmake -B libtapi -S "${VENDOR}/apple-libtapi/src/llvm" \
 	-DLLVM_ENABLE_PROJECTS="tapi;clang" \
 	-DLLVM_TARGETS_TO_BUILD="X86;ARM;AArch64" \
 	-DLLVM_INCLUDE_TESTS=OFF \
 	-DCMAKE_CXX_FLAGS="-I${PWD}/../src/llvm/projects/clang/include -I${PWD}/projects/clang/include" \
 	-DCMAKE_BUILD_TYPE=RELEASE \
 	-DCMAKE_INSTALL_PREFIX="${INSTALLPREFIX}"
-cmake --build apple-libtapi --target install-libtapi install-tapi-headers install-tapi install-dsymutil -- -j "${JOBS}"
+cmake --build libtapi --target install-libtapi install-tapi-headers install-tapi install-dsymutil -- -j "${JOBS}"
 
 info "Building libdispatch"
-cmake -B apple-libdispatch -S "${VENDOR}/apple-libdispatch" \
+cmake -B libdispatch -S "${VENDOR}/apple-libdispatch" \
 	-DCMAKE_BUILD_TYPE=RELEASE \
 	-DCMAKE_INSTALL_PREFIX="$INSTALLPREFIX"
-cmake --build apple-libdispatch --target install
+cmake --build libdispatch --target install
 
 info "Building cctools"
 mkdir -p "${STAGING}/build/cctools"
