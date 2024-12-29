@@ -1,0 +1,11 @@
+services:
+  builder:
+    build:
+      context: .
+      args:
+        - DARWIN_BUILD_BASE
+    volumes:
+      - ./packages:/work/packages
+    container_name: builder
+    stdin_open: true
+    tty: true

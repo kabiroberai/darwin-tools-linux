@@ -13,54 +13,29 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - runner: ubuntu:20.04
-            name: ubuntu20.04
-          - runner: ubuntu:22.04
-            name: ubuntu22.04
-          - runner: archlinux:base-devel
-            name: arch
-          - runner: fedora:38
-            name: ubi9
-          - runner: arm64v8/ubuntu:20.04
-            name: ubuntu20.04-aarch64
-          - runner: arm64v8/ubuntu:22.04
-            name: ubuntu22.04-aarch64
-          - runner: lopsided/archlinux-arm64v8:devel
-            name: arch-aarch64
-          - runner: arm64v8/fedora:38
-            name: ubi9-aarch64
+          - name: ubuntu20.04
+            image: ubuntu:20.04
+          - name: ubuntu22.04
+            image: ubuntu:22.04
+          - name: ubuntu24.04
+            image: ubuntu:24.04
+          - name: fedora39
+            image: fedora:39
+          - runner: archlinux
+            image: archlinux:base-devel
 
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
       with:
         submodules: true
-
-    - name: QEMU fix
-      run: |
-        if echo "${{ matrix.name }}" | grep "aarch64"; then
-          docker run --rm --privileged hypriot/qemu-register
-        else
-          echo "Not aarch64; no fix needed..."
-        fi
-
     - name: Build Release
+      id: build_release
       run: |
-        # No amd64 aarch64 image for Fedora so need to be explicit (breaks other distros' docker run cmds)
-        platform_flag=$(if [ "${{ matrix.name }}" = "ubi9-aarch64" ]; then echo "--platform=linux/arm64"; else echo ""; fi)
-        docker run $platform_flag \
-          --rm \
-          -v /qemu-aarch64:/usr/bin/qemu-aarch64 \
-          -v $PWD:/workspace \
-          -w /workspace \
-          ${{ matrix.runner }} \
-          sh -c "
-            ./prepare-env ${{ matrix.name }}
-            CC=clang CXX=clang++ ./prepare-toolchain
-            mv packages/darwin-tools.tar.gz packages/darwin-tools-${{ matrix.name }}.tar.gz
-          "
-
+        DARWIN_BUILD_BASE=${{ matrix.image }} docker compose run --build --rm builder -c ./prepare-toolchain
+        mv packages/darwin-tools.tar.gz packages/darwin-tools-${{ matrix.name }}.tar.gz
     - name: Upload artifact
+      id: upload_artifact
       uses: actions/upload-artifact@v4
       with:
         name: DT-${{ matrix.name }}
@@ -72,12 +47,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Download artifact
+        id: download_artifact
         uses: actions/download-artifact@v4
         with:
           pattern: DT-*
           path: packages
 
       - name: Create and publish release
+        id: publish_release
         run: |
           TAG="${GITHUB_REF##*/}-${GITHUB_SHA:0:7}"
           gh release create "$TAG" --draft --title "Draft Release"

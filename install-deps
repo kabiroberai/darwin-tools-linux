@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+
+set -e
+
+if [[ $# -ne 1 ]]; then
+    echo "Usage: $0 <distro>"
+    exit 1
+fi
+
+distro="$1"
+
+if [[ "$distro" = "ubuntu:"* ]]; then
+    export DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true
+    apt-get update
+    apt-get install -y --no-install-recommends \
+        lsb-release software-properties-common wget cmake curl gpg-agent build-essential autoconf automake libtool-bin libssl-dev pkg-config git libstdc++-10-dev
+    curl -fsSL https://apt.llvm.org/llvm.sh | bash -s -- 18
+    apt-get install -y --no-install-recommends \
+        clang-18 libc++-18-dev libc++abi-18-dev
+    rm -rf /var/lib/apt/lists/*
+    entry_env="export CC=clang-18 CXX=clang++-18"
+elif [[ "$distro" = "fedora:"* ]]; then
+    yum -y install binutils git-all clang libcxx-devel libcxxabi-devel libcxxabi-static cmake make automake which libtool openssl-devel
+    entry_env="export CC=clang CXX=clang++"
+elif [[ "$distro" = "archlinux:"* ]]; then
+    pacman -Sy --needed --noconfirm base-devel cmake clang libc++ git python openssl perl
+    entry_env="export CC=clang CXX=clang++"
+else
+    echo "$0: I don't know how to install dependencies for $distro"
+    exit 1
+fi
+
+echo "$entry_env" > /etc/profile.d/docker_init.sh

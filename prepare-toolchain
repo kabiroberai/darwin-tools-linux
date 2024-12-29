@@ -6,6 +6,7 @@ shopt -s extglob
 info() { echo "[info] $1"; }
 
 ROOT="${PWD}"
+VENDOR="${ROOT}/vendor"
 STAGING="${ROOT}/staging"
 PACKAGES="${ROOT}/packages"
 export INSTALLPREFIX="${STAGING}/prefix/linux/iphone"
@@ -18,46 +19,58 @@ else
 fi
 
 info "Creating prefix dir"
-rm -rf "${STAGING}"
-mkdir -pv "${INSTALLPREFIX}"
+mkdir -p "${INSTALLPREFIX}"
+rm -rf "${INSTALLPREFIX}"
 
 info "Building LLVM tools"
-cd "${ROOT}/apple-libtapi/"
-cmake -B build -S src/llvm \
+mkdir -p "${STAGING}/build/"
+cd "${STAGING}/build/"
+cmake -B apple-libtapi -S "${VENDOR}/apple-libtapi/src/llvm" \
+	-DLLVM_ENABLE_PROJECTS="tapi;clang" \
 	-DLLVM_TARGETS_TO_BUILD="X86;ARM;AArch64" \
 	-DLLVM_INCLUDE_TESTS=OFF \
-	-DLLVM_ENABLE_WARNINGS=OFF \
-	-DCMAKE_CXX_FLAGS="-I${PWD}/src/llvm/projects/clang/include/ -I${PWD}/build/projects/clang/include/" \
-	-DCMAKE_BUILD_TYPE=Release \
+	-DCMAKE_CXX_FLAGS="-I${PWD}/../src/llvm/projects/clang/include -I${PWD}/projects/clang/include" \
+	-DCMAKE_BUILD_TYPE=RELEASE \
 	-DCMAKE_INSTALL_PREFIX="${INSTALLPREFIX}"
-cmake --build build --target libtapi dsymutil install-libtapi install-tapi-headers install-tapi install-dsymutil -- -j "${JOBS}"
+cmake --build apple-libtapi --target install-libtapi install-tapi-headers install-tapi install-dsymutil -- -j "${JOBS}"
+
+info "Building libdispatch"
+cmake -B apple-libdispatch -S "${VENDOR}/apple-libdispatch" \
+	-DCMAKE_BUILD_TYPE=RELEASE \
+	-DCMAKE_INSTALL_PREFIX="$INSTALLPREFIX"
+cmake --build apple-libdispatch --target install
 
 info "Building cctools"
-cd "${ROOT}/cctools-port/cctools"
-./configure \
+mkdir -p "${STAGING}/build/cctools"
+cd "${STAGING}/build/cctools"
+"${VENDOR}/cctools-port/cctools/configure" \
 	--prefix="${INSTALLPREFIX}" \
 	--with-libtapi="${INSTALLPREFIX}" \
+	--with-libdispatch="${INSTALLPREFIX}" \
+	--with-libblocksruntime="${INSTALLPREFIX}" \
 	--target="aarch64-apple-darwin14" \
 	--program-prefix="" \
-	LDFLAGS="-Wl,-rpath,'\$\$ORIGIN/../lib' -Wl,-z,origin"
+	LDFLAGS="-Wl,-rpath,'\$\$ORIGIN/../lib' -Wl,-rpath,'\$\$ORIGIN/../lib64' -Wl,-z,origin"
 make -j "${JOBS}" \
 	PROGRAM_PREFIX="" \
 	CXXABI_LIB="-l:libc++abi.a" \
 	install
 
 info "Building libplist"
-cd "${ROOT}/libplist"
+cd "${VENDOR}/libplist"
 PLIST_PREFIX="${STAGING}/libplist-install"
-mkdir -p "${PLIST_PREFIX}"
-LC_ALL=C ./autogen.sh --prefix="${PLIST_PREFIX}" --without-cython --enable-static --disable-shared PACKAGE_VERSION=latest
+mkdir -p "${PLIST_PREFIX}" "${STAGING}/build/libplist"
+LC_ALL=C NOCONFIGURE=1 ./autogen.sh
+cd "${STAGING}/build/libplist"
+LC_ALL=C "${VENDOR}/libplist/configure" --prefix="${PLIST_PREFIX}" --without-cython --enable-static --disable-shared PACKAGE_VERSION=latest
 make -j "${JOBS}" install
 cp -av "${PLIST_PREFIX}/bin/plistutil" "${INSTALLPREFIX}/bin"
 
-info "Installing ldid"
-cd "${ROOT}/ldid"
+info "Building ldid"
+cd "${VENDOR}/ldid"
 make -j "${JOBS}" \
 	DESTDIR="${INSTALLPREFIX}" PREFIX="" \
-	LIBCRYPTO_LIBS="-l:libcrypto.a -lpthread -ldl" \
+	LIBCRYPTO_LIBS="-lcrypto -lpthread -ldl" \
 	LIBPLIST_LIBS="${PLIST_PREFIX}/lib/libplist-2.0.a" LIBPLIST_INCLUDES="-I${PLIST_PREFIX}/include" \
 	install
 
