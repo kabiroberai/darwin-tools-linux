@@ -38,7 +38,7 @@ info "Building libdispatch"
 cmake -B libdispatch -S "${VENDOR}/apple-libdispatch" \
 	-DCMAKE_BUILD_TYPE=RELEASE \
 	-DCMAKE_INSTALL_PREFIX="$INSTALLPREFIX"
-cmake --build libdispatch --target install
+cmake --build libdispatch --target install -- -j "${JOBS}"
 
 info "Building cctools"
 mkdir -p "${STAGING}/build/cctools"

@@ -21,7 +21,7 @@ jobs:
             image: ubuntu:24.04
           - name: fedora39
             image: fedora:39
-          - runner: archlinux
+          - name: archlinux
             image: archlinux:base-devel
 
     runs-on: ubuntu-latest
