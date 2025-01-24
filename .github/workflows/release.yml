@@ -25,8 +25,14 @@ jobs:
             image: archlinux:base-devel
         host:
           - runner: ubuntu-24.04
+            arch: x86_64
             suffix: ""
           - runner: ubuntu-24.04-arm
+            arch: aarch64
+            suffix: -aarch64
+        exclude:
+          # No Docker image for archlinux on linux/arm64, as Arch doesn't officially support ARM.
+          - name: archlinux
             suffix: -aarch64
 
     runs-on: ${{ matrix.host.runner }}
@@ -37,7 +43,6 @@ jobs:
     - name: Build Release
       id: build_release
       run: |
-        echo "Building darwin-tools-${{ matrix.target.name }}${{ matrix.host.suffix }}.tar.gz"
         DARWIN_BUILD_BASE=${{ matrix.target.image }} docker compose run --build --rm builder -c ./prepare-toolchain
     - name: Upload artifact
       id: upload_artifact
