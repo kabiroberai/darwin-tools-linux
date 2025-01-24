@@ -32,8 +32,10 @@ jobs:
             suffix: -aarch64
         exclude:
           # No Docker image for archlinux on linux/arm64, as Arch doesn't officially support ARM.
-          - name: archlinux
-            suffix: -aarch64
+          - target:
+              name: archlinux
+            host:
+              suffix: -aarch64
 
     runs-on: ${{ matrix.host.runner }}
     steps:
