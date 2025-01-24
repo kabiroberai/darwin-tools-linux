@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
+        target:
           - name: ubuntu20.04
             image: ubuntu:20.04
           - name: ubuntu22.04
@@ -23,8 +23,21 @@ jobs:
             image: fedora:39
           - name: archlinux
             image: archlinux:base-devel
+        host:
+          - runner: ubuntu-24.04
+            arch: x86_64
+            suffix: ""
+          - runner: ubuntu-24.04-arm
+            arch: aarch64
+            suffix: -aarch64
+        exclude:
+          # No Docker image for archlinux on linux/arm64, as Arch doesn't officially support ARM.
+          - target:
+              name: archlinux
+            host:
+              suffix: -aarch64
 
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.host.runner }}
     steps:
     - uses: actions/checkout@v4
       with:
@@ -32,12 +45,12 @@ jobs:
     - name: Build Release
       id: build_release
       run: |
-        DARWIN_BUILD_BASE=${{ matrix.image }} docker compose run --build --rm builder -c ./prepare-toolchain
+        DARWIN_BUILD_BASE=${{ matrix.target.image }} docker compose run --build --rm builder -c ./prepare-toolchain
     - name: Upload artifact
       id: upload_artifact
       uses: actions/upload-artifact@v4
       with:
-        name: DT-${{ matrix.name }}
+        name: darwin-tools-${{ matrix.target.name }}${{ matrix.host.suffix }}
         path: packages/darwin-tools.tar.gz
 
   release:
@@ -49,7 +62,7 @@ jobs:
         id: download_artifact
         uses: actions/download-artifact@v4
         with:
-          pattern: DT-*
+          pattern: darwin-tools-*
           path: packages
 
       - name: Create and publish release
