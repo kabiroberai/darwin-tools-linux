@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 set -e
 
@@ -22,8 +22,11 @@ if [[ "$distro" = "ubuntu:"* ]]; then
 elif [[ "$distro" = "fedora:"* ]]; then
     yum -y install binutils git-all clang libcxx-devel libcxxabi-devel libcxxabi-static cmake make automake which libtool openssl-devel
     entry_env="export CC=clang CXX=clang++"
+elif [[ "$distro" = "archlinux:"* ]]; then
+    pacman -Sy --needed --noconfirm base-devel cmake clang libc++ git python openssl perl
+    entry_env="export CC=clang CXX=clang++"
 else
-    echo "install-deps: I don't know how to install dependencies for $distro"
+    echo "$0: I don't know how to install dependencies for $distro"
     exit 1
 fi
 

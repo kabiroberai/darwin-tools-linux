@@ -23,24 +23,22 @@ mkdir -p "${INSTALLPREFIX}"
 rm -rf "${INSTALLPREFIX}"
 
 info "Building LLVM tools"
-mkdir -p "${STAGING}/build/apple-libtapi"
-cd "${STAGING}/build/apple-libtapi"
-cmake "${VENDOR}/apple-libtapi/src/llvm" \
-	-DCMAKE_CXX_FLAGS="-I${PWD}/../src/llvm/projects/clang/include -I${PWD}/projects/clang/include" \
-	-DLLVM_INCLUDE_TESTS=OFF \
-	-DCMAKE_BUILD_TYPE=RELEASE \
+mkdir -p "${STAGING}/build/"
+cd "${STAGING}/build/"
+cmake -B libtapi -S "${VENDOR}/apple-libtapi/src/llvm" \
 	-DLLVM_ENABLE_PROJECTS="tapi;clang" \
+	-DLLVM_TARGETS_TO_BUILD="X86;ARM;AArch64" \
+	-DLLVM_INCLUDE_TESTS=OFF \
+	-DCMAKE_CXX_FLAGS="-I${PWD}/../src/llvm/projects/clang/include -I${PWD}/projects/clang/include" \
+	-DCMAKE_BUILD_TYPE=RELEASE \
 	-DCMAKE_INSTALL_PREFIX="${INSTALLPREFIX}"
-make clangBasic -j "${JOBS}"
-make libtapi dsymutil install-libtapi install-tapi-headers install-dsymutil -j "${JOBS}"
+cmake --build libtapi --target install-libtapi install-tapi-headers install-tapi install-dsymutil -- -j "${JOBS}"
 
 info "Building libdispatch"
-mkdir -p "${STAGING}/build/apple-libdispatch"
-cd "${STAGING}/build/apple-libdispatch"
-cmake "${VENDOR}/apple-libdispatch" \
+cmake -B libdispatch -S "${VENDOR}/apple-libdispatch" \
 	-DCMAKE_BUILD_TYPE=RELEASE \
 	-DCMAKE_INSTALL_PREFIX="$INSTALLPREFIX"
-make -j "${JOBS}" install
+cmake --build libdispatch --target install -- -j "${JOBS}"
 
 info "Building cctools"
 mkdir -p "${STAGING}/build/cctools"
@@ -64,8 +62,9 @@ PLIST_PREFIX="${STAGING}/libplist-install"
 mkdir -p "${PLIST_PREFIX}" "${STAGING}/build/libplist"
 LC_ALL=C NOCONFIGURE=1 ./autogen.sh
 cd "${STAGING}/build/libplist"
-LC_ALL=C "${VENDOR}/libplist/configure" --prefix="${PLIST_PREFIX}" --without-cython PACKAGE_VERSION=latest
+LC_ALL=C "${VENDOR}/libplist/configure" --prefix="${PLIST_PREFIX}" --without-cython --enable-static --disable-shared PACKAGE_VERSION=latest
 make -j "${JOBS}" install
+cp -av "${PLIST_PREFIX}/bin/plistutil" "${INSTALLPREFIX}/bin"
 
 info "Building ldid"
 cd "${VENDOR}/ldid"
@@ -77,7 +76,6 @@ make -j "${JOBS}" \
 
 info "Packaging toolchain"
 mkdir -p "${PACKAGES}"
-cd "${STAGING}/prefix"
-tar -czf "${PACKAGES}/darwin-tools.tar.gz" linux
+tar -czf "${PACKAGES}/darwin-tools.tar.gz" -C "${STAGING}/prefix" linux
 
 info "Done!"
