@@ -1,8 +1,10 @@
 name: Create Release
 
 on:
-  - push
-  - workflow_dispatch
+  push:
+    branches:
+      - main
+  workflow_dispatch:
 
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -45,17 +47,20 @@ jobs:
     - name: Build Release
       id: build_release
       run: |
-        DARWIN_BUILD_BASE=${{ matrix.target.image }} docker compose run --build --rm builder -c ./prepare-toolchain
+        # DARWIN_BUILD_BASE=${{ matrix.target.image }} docker compose run --build --rm builder -c ./prepare-toolchain
+        mkdir -p packages && echo "dummy" > packages/darwin-tools.tar.gz
     - name: Upload artifact
       id: upload_artifact
       uses: actions/upload-artifact@v4
       with:
-        name: darwin-tools-${{ matrix.target.name }}${{ matrix.host.suffix }}
+        name: darwin-tools-${{ matrix.target.name }}${{ matrix.host.suffix }}.tar.gz
         path: packages/darwin-tools.tar.gz
 
   release:
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
       - name: Download artifact
