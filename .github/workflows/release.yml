@@ -19,12 +19,12 @@ jobs:
             image: ubuntu:20.04
           - name: ubuntu22.04
             image: ubuntu:22.04
-          # - name: ubuntu24.04
-          #   image: ubuntu:24.04
-          # - name: fedora39
-          #   image: fedora:39
-          # - name: archlinux
-          #   image: archlinux:base-devel
+          - name: ubuntu24.04
+            image: ubuntu:24.04
+          - name: fedora39
+            image: fedora:39
+          - name: archlinux
+            image: archlinux:base-devel
         host:
           - runner: ubuntu-24.04
             arch: x86_64
@@ -47,8 +47,8 @@ jobs:
     - name: Build Release
       id: build_release
       run: |
-        # DARWIN_BUILD_BASE=${{ matrix.target.image }} docker compose run --build --rm builder -c ./prepare-toolchain
-        mkdir -p packages && echo "dummy" > packages/darwin-tools-${{ matrix.target.name }}${{ matrix.host.suffix }}.tar.gz
+        DARWIN_BUILD_BASE=${{ matrix.target.image }} docker compose run --build --rm builder -c ./prepare-toolchain
+        mv packages/darwin-tools.tar.gz packages/darwin-tools-${{ matrix.target.name }}${{ matrix.host.suffix }}.tar.gz
     - name: Upload artifact
       id: upload_artifact
       uses: actions/upload-artifact@v4
@@ -75,6 +75,4 @@ jobs:
         run: |
           TAG="${GITHUB_REF##*/}-${GITHUB_SHA:0:7}"
           gh release create "$TAG" --draft --title "Draft Release"
-          gh release list
-          ls packages/**/*.tar.gz
           gh release upload "$TAG" packages/**/*.tar.gz
