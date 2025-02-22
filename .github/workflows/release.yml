@@ -48,13 +48,13 @@ jobs:
       id: build_release
       run: |
         # DARWIN_BUILD_BASE=${{ matrix.target.image }} docker compose run --build --rm builder -c ./prepare-toolchain
-        mkdir -p packages && echo "dummy" > packages/darwin-tools.tar.gz
+        mkdir -p packages && echo "dummy" > packages/darwin-tools-${{ matrix.target.name }}${{ matrix.host.suffix }}.tar.gz
     - name: Upload artifact
       id: upload_artifact
       uses: actions/upload-artifact@v4
       with:
-        name: darwin-tools-${{ matrix.target.name }}${{ matrix.host.suffix }}.tar.gz
-        path: packages/darwin-tools.tar.gz
+        name: darwin-tools-${{ matrix.target.name }}${{ matrix.host.suffix }}
+        path: packages/darwin-tools-${{ matrix.target.name }}${{ matrix.host.suffix }}.tar.gz
 
   release:
     needs: build
@@ -76,5 +76,5 @@ jobs:
           TAG="${GITHUB_REF##*/}-${GITHUB_SHA:0:7}"
           gh release create "$TAG" --draft --title "Draft Release"
           gh release list
-          ls packages/*.tar.gz
-          gh release upload "$TAG" packages/*.tar.gz
+          ls packages/**/*.tar.gz
+          gh release upload "$TAG" packages/**/*.tar.gz
