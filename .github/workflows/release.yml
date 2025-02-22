@@ -19,12 +19,12 @@ jobs:
             image: ubuntu:20.04
           - name: ubuntu22.04
             image: ubuntu:22.04
-          - name: ubuntu24.04
-            image: ubuntu:24.04
-          - name: fedora39
-            image: fedora:39
-          - name: archlinux
-            image: archlinux:base-devel
+          # - name: ubuntu24.04
+          #   image: ubuntu:24.04
+          # - name: fedora39
+          #   image: fedora:39
+          # - name: archlinux
+          #   image: archlinux:base-devel
         host:
           - runner: ubuntu-24.04
             arch: x86_64
@@ -75,4 +75,6 @@ jobs:
         run: |
           TAG="${GITHUB_REF##*/}-${GITHUB_SHA:0:7}"
           gh release create "$TAG" --draft --title "Draft Release"
-          gh release upload "$TAG" packages/**/*.tar.gz
+          gh release list
+          ls packages/*.tar.gz
+          gh release upload "$TAG" packages/*.tar.gz
